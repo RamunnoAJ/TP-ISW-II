@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis servicios · Provecho</title>
+  <meta name="description" content="Prototipo funcional CU 003 – Publicar Servicio (Provecho)">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Contenedor de la aplicación: se marca como inert cuando hay un modal abierto (foco atrapado en el popup) -->
+  <div id="app">
+    <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+    <!-- Elemento común: header fijo en todas las pantallas (Shneiderman #1 – Consistencia) -->
+    <header class="encabezado">
+      <span class="marca">Provecho</span>
+      <div class="encabezado__acciones">
+        <!-- SUPUESTO: notificaciones y perfil son decorativos (no tienen acción) pero son focusables para mostrar el tooltip -->
+        <button type="button" class="icono-boton tooltip tooltip--abajo" aria-label="Notificaciones" data-tooltip="Notificaciones">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </button>
+        <!-- Precondición 1: Cocinero autenticado (mock). Al pasar el mouse o hacer foco se ve su nombre -->
+        <button type="button" class="icono-boton tooltip tooltip--abajo" aria-label="Perfil de Ramiro Staropoli" data-tooltip="Ramiro Staropoli">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3.2"/><path d="M6.2 18.4a6.5 6.5 0 0 1 11.6 0"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="contenido" class="contenido">
+
+      <!-- ===================== IGU_MIS_SERVICIOS ===================== -->
+      <!-- CU003 - Pasos 1 y 2: el Cocinero ingresa a "Mis servicios" y el sistema lista sus servicios -->
+      <section id="pantalla-mis-servicios" class="pantalla" aria-labelledby="titulo-mis-servicios">
+        <h1 id="titulo-mis-servicios" class="titulo-pantalla" tabindex="-1">Servicios publicados</h1>
+
+        <ul id="lista-servicios" class="lista-servicios" aria-labelledby="titulo-mis-servicios"></ul>
+
+        <!-- Estado vacío (Nielsen #1 – Visibilidad del estado del sistema) -->
+        <div id="estado-vacio" class="estado-vacio" hidden>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="48" height="48"><path d="M3 11h18"/><path d="M5 11a7 7 0 0 1 14 0"/><path d="M12 4V3"/><path d="M4 15h16l-1.5 4h-13z"/></svg>
+          <p class="estado-vacio__texto">Todavía no publicaste servicios</p>
+          <p class="estado-vacio__ayuda">Publicá tu primer servicio para que los clientes de tu zona puedan conocer tu oferta.</p>
+          <button type="button" id="btn-publicar-primero" class="btn btn--primario">Publicar mi primer servicio</button>
+        </div>
+
+        <!-- CU003 - Paso 3: opción "Publicar nuevo servicio" (botón flotante "+") -->
+        <button type="button" id="btn-nuevo-servicio" class="fab tooltip tooltip--arriba"
+                aria-label="Publicar nuevo servicio" data-tooltip="Publicar nuevo servicio">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </section>
+
+      <!-- ===================== IGU_PUBLICAR_SERVICIO ===================== -->
+      <!-- CU003 - Paso 4: el sistema muestra el formulario -->
+      <section id="pantalla-publicar" class="pantalla" aria-labelledby="titulo-publicar" hidden>
+        <h1 id="titulo-publicar" class="titulo-pantalla" tabindex="-1">Publicar nuevo servicio</h1>
+
+        <!-- novalidate: la validación la hace la cadena de validadores al presionar "Publicar" (FA 6) -->
+        <form id="form-publicar" class="formulario" novalidate autocomplete="off">
+
+          <!-- 1. Nombre del servicio -->
+          <div class="campo" id="campo-nombre">
+            <div class="campo__cabecera">
+              <label for="nombre" class="etiqueta">Nombre del servicio <span class="obligatorio" aria-hidden="true">*</span></label>
+              <!-- Shneiderman #3 – Retroalimentación: contador de caracteres -->
+              <span class="contador" id="contador-nombre" data-max="25">0/25</span>
+            </div>
+            <!-- Sin maxlength: el límite lo detecta la validación (spec §3) -->
+            <input type="text" id="nombre" name="nombre" class="control" placeholder="Menu de pastas caseras"
+                   aria-required="true" aria-describedby="ayuda-nombre contador-nombre">
+            <!-- Nielsen #10 – Ayuda y documentación -->
+            <p class="ayuda" id="ayuda-nombre">Solo letras y espacios, hasta 25 caracteres.</p>
+            <p class="mensaje-error" id="error-nombre" hidden></p>
+          </div>
+
+          <!-- 2. Descripción del menú / platos ofrecidos -->
+          <div class="campo" id="campo-descripcion">
+            <div class="campo__cabecera">
+              <label for="descripcion" class="etiqueta">Descripción del menú / platos ofrecidos <span class="obligatorio" aria-hidden="true">*</span></label>
+              <span class="contador" id="contador-descripcion" data-max="350">0/350</span>
+            </div>
+            <textarea id="descripcion" name="descripcion" class="control control--area" rows="3"
+                      placeholder="Entrada, plato principal y postre. Detalle de ingredientes y variantes…"
+                      aria-required="true" aria-describedby="ayuda-descripcion contador-descripcion"></textarea>
+            <p class="ayuda" id="ayuda-descripcion">Podés usar letras y los signos , . ; : ( ) -</p>
+            <p class="mensaje-error" id="error-descripcion" hidden></p>
+          </div>
+
+          <!-- 3. Días de disponibilidad (Nielsen #6 – Reconocer antes que recordar: días como botones) -->
+          <fieldset class="campo campo--grupo" id="campo-dias">
+            <legend class="etiqueta">Días de disponibilidad <span class="obligatorio" aria-hidden="true">*</span></legend>
+            <div class="dias" role="group" id="grupo-dias" aria-describedby="ayuda-dias">
+              <button type="button" class="dia" data-dia="L" aria-pressed="false" aria-label="Lunes">L</button>
+              <button type="button" class="dia" data-dia="M" aria-pressed="false" aria-label="Martes">M</button>
+              <button type="button" class="dia" data-dia="X" aria-pressed="false" aria-label="Miércoles">X</button>
+              <button type="button" class="dia" data-dia="J" aria-pressed="false" aria-label="Jueves">J</button>
+              <button type="button" class="dia" data-dia="V" aria-pressed="false" aria-label="Viernes">V</button>
+              <button type="button" class="dia" data-dia="S" aria-pressed="false" aria-label="Sábado">S</button>
+              <button type="button" class="dia" data-dia="D" aria-pressed="false" aria-label="Domingo">D</button>
+            </div>
+            <p class="ayuda" id="ayuda-dias">Tocá los días en que podés cocinar. Volvé a tocarlos para quitarlos.</p>
+            <p class="mensaje-error" id="error-dias" hidden></p>
+          </fieldset>
+
+          <!-- 4. Horario disponible: inputs de texto (no type="time") para poder probar casos inválidos -->
+          <fieldset class="campo campo--grupo">
+            <legend class="etiqueta">Horario disponible <span class="obligatorio" aria-hidden="true">*</span></legend>
+            <div class="fila-rango">
+              <div class="subcampo" id="campo-horaDesde">
+                <label for="horaDesde" class="subetiqueta">Desde</label>
+                <!-- SUPUESTO: placeholder "HH:MM" (regla §3) en lugar de "Desde 12:00"; la etiqueta "Desde" queda visible arriba -->
+                <input type="text" id="horaDesde" name="horaDesde" class="control" placeholder="HH:MM"
+                       aria-required="true" aria-describedby="ayuda-horaDesde">
+                <p class="ayuda" id="ayuda-horaDesde">Formato 24 hs, por ejemplo 12:00</p>
+                <p class="mensaje-error" id="error-horaDesde" hidden></p>
+              </div>
+              <span class="separador" aria-hidden="true">—</span>
+              <div class="subcampo" id="campo-horaHasta">
+                <label for="horaHasta" class="subetiqueta">Hasta</label>
+                <input type="text" id="horaHasta" name="horaHasta" class="control" placeholder="HH:MM"
+                       aria-required="true" aria-describedby="ayuda-horaHasta">
+                <p class="ayuda" id="ayuda-horaHasta">Usá 00:00 para indicar medianoche</p>
+                <p class="mensaje-error" id="error-horaHasta" hidden></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- 5. Rango de precios estimado (p/ persona): inputs de texto (no type="number") -->
+          <fieldset class="campo campo--grupo">
+            <legend class="etiqueta">Rango de precios estimado (p/ persona) <span class="obligatorio" aria-hidden="true">*</span></legend>
+            <div class="fila-rango">
+              <div class="subcampo" id="campo-precioMin">
+                <label for="precioMin" class="subetiqueta">Mínimo</label>
+                <input type="text" id="precioMin" name="precioMin" class="control" placeholder="$ mínimo" inputmode="decimal"
+                       aria-required="true" aria-describedby="ayuda-precios">
+                <p class="mensaje-error" id="error-precioMin" hidden></p>
+              </div>
+              <span class="separador" aria-hidden="true">—</span>
+              <div class="subcampo" id="campo-precioMax">
+                <label for="precioMax" class="subetiqueta">Máximo</label>
+                <input type="text" id="precioMax" name="precioMax" class="control" placeholder="$ máximo" inputmode="decimal"
+                       aria-required="true" aria-describedby="ayuda-precios">
+                <p class="mensaje-error" id="error-precioMax" hidden></p>
+              </div>
+            </div>
+            <p class="ayuda" id="ayuda-precios">Precio estimado por persona, en pesos. Sin separador de miles; usá coma o punto para decimales (ej. 15000 o 15000,50).</p>
+          </fieldset>
+
+          <!-- 6. Fotos (opcional) – Nielsen #7: clic o arrastrar y soltar -->
+          <div class="campo" id="campo-fotos">
+            <span class="etiqueta" id="etiqueta-fotos">Fotos (opcional)</span>
+            <div class="zona-fotos" id="zona-fotos">
+              <!-- Nielsen #5 – el selector acepta solo imágenes .png/.jpg -->
+              <input type="file" id="input-fotos" class="visualmente-oculto" multiple tabindex="-1" aria-hidden="true"
+                     accept=".png,.jpg,.jpeg,image/png,image/jpeg">
+              <button type="button" id="btn-agregar-fotos" class="zona-fotos__boton"
+                      aria-describedby="etiqueta-fotos ayuda-fotos">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                <span>Agregar fotos del menú</span>
+              </button>
+            </div>
+            <p class="ayuda" id="ayuda-fotos">Formatos .png o .jpg. Hacé clic o arrastrá y soltá las imágenes en el recuadro.</p>
+            <ul class="miniaturas" id="lista-fotos" aria-label="Fotos cargadas"></ul>
+            <p class="mensaje-error" id="error-fotos" hidden></p>
+          </div>
+
+          <!-- Nielsen #4 – * para obligatorios -->
+          <p class="leyenda-obligatorios"><span class="obligatorio" aria-hidden="true">*</span> Campos obligatorios</p>
+
+          <!-- Botones abajo a la derecha: secundario "Cancelar" y primario "Publicar" (Nielsen #4) -->
+          <div class="acciones-formulario">
+            <button type="button" id="btn-cancelar" class="btn btn--secundario">Cancelar</button>
+            <!-- Shneiderman #2 – Enter envía el formulario (botón submit) -->
+            <button type="submit" id="btn-publicar" class="btn btn--primario">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn__texto">Publicar</span>
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="pie">
+      <span>Prototipo CU 003 – Publicar Servicio</span>
+      <button type="button" id="btn-reiniciar" class="btn-enlace">Reiniciar datos de prueba</button>
+    </footer>
+
+    <!-- Región viva para anunciar cambios de estado a lectores de pantalla (Nielsen #1) -->
+    <div id="anuncio" class="visualmente-oculto" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <!-- ===================== IGU_ERROR_DATOS (FA 6.1) ===================== -->
+  <div class="modal-fondo" id="modal-error" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-error" aria-describedby="lista-errores">
+      <button type="button" class="modal__cerrar" data-accion="cerrar" aria-label="Cerrar">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="modal__icono modal__icono--advertencia" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><circle cx="12" cy="18" r=".6"/></svg>
+      </div>
+      <h2 id="titulo-error" class="modal__titulo">Revisá los datos del servicio</h2>
+      <ul id="lista-errores" class="lista-errores"></ul>
+      <div class="modal__acciones">
+        <button type="button" id="btn-error-aceptar" class="btn btn--primario">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== IGU_POPUP_CANCELACION (FA 5.2) ===================== -->
+  <div class="modal-fondo" id="modal-cancelar" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-cancelar" aria-describedby="texto-cancelar">
+      <button type="button" class="modal__cerrar" data-accion="cerrar" aria-label="Cerrar y volver al formulario">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="modal__icono modal__icono--advertencia" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="40" height="40"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><circle cx="12" cy="16.5" r=".6"/></svg>
+      </div>
+      <h2 id="titulo-cancelar" class="modal__titulo">¿Está seguro que desea cancelar?</h2>
+      <p id="texto-cancelar" class="modal__texto">Se perderán los datos ingresados</p>
+      <div class="modal__acciones">
+        <!-- Shneiderman #6/#7: la acción destructiva requiere confirmación explícita; la segura es la primaria -->
+        <button type="button" id="btn-cancelar-si" class="btn btn--destructivo">Sí, cancelar</button>
+        <button type="button" id="btn-cancelar-no" class="btn btn--primario">No, volver</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== IGU_POPUP_COMPROBANTE_PUBLICACION (Paso 6) ===================== -->
+  <div class="modal-fondo" id="modal-comprobante" hidden>
+    <div class="modal modal--comprobante" role="dialog" aria-modal="true" aria-labelledby="titulo-comprobante" aria-describedby="texto-comprobante">
+      <button type="button" class="modal__cerrar" data-accion="cerrar" aria-label="Cerrar">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <!-- Shneiderman #4 – Diálogo que indica cierre -->
+      <div class="modal__icono modal__icono--exito" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="44" height="44"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
+      </div>
+      <h2 id="titulo-comprobante" class="modal__titulo">Servicio publicado con exito</h2>
+      <!-- Shneiderman #8 / Nielsen #6 – resumen completo de lo publicado -->
+      <dl class="resumen">
+        <dt>Servicio:</dt>
+        <dd id="comp-nombre"></dd>
+        <dt>Estado:</dt>
+        <dd><span class="chip chip--activo" id="comp-estado">Activo</span></dd>
+        <dt>Días y horarios:</dt>
+        <dd id="comp-horarios"></dd>
+        <dt>Rango de precios:</dt>
+        <dd id="comp-precios"></dd>
+      </dl>
+      <p id="texto-comprobante" class="modal__texto">Tu oferta gastronomica ya se encuentra disponible para todos los clientes dentro del radio de cobertura</p>
+      <div class="modal__acciones modal__acciones--centro">
+        <!-- Orden según IGU de baja fidelidad -->
+        <button type="button" id="btn-ir-mis-servicios" class="btn btn--primario">Ir a mis servicios</button>
+        <button type="button" id="btn-comprobante-cerrar" class="btn btn--secundario">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/validadores.js"></script>
+  <script src="js/controlador.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "nombre": "Pastas Caseras",
+  "descripcion": "Entrada y plato principal",
+  "dias": ["L", "M"],
+  "horaDesde": "05:30",
+  "horaHasta": "12:00",
+  "precioMin": "255",
+  "precioMax": "255"
+}
